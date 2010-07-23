@@ -182,33 +182,6 @@ abstract class MemberUtils {
                 }
             }
         }
-        if (isVarArgs) {
-            final float varArgsCost = 0.001f;
-            Class<?> destClass = destArgs[destArgs.length-1].getComponentType();
-            if (destClass == null) {
-                return Float.MAX_VALUE;
-            }
-            if (srcArgs.length > destArgs.length) {
-                for (int i = destArgs.length-1; i < srcArgs.length; i++) {
-                    Class<?> srcClass = srcArgs[i];
-                    totalCost += getObjectTransformationCost(srcClass, destClass) + varArgsCost;
-                }
-            }
-            else if (srcArgs.length==destArgs.length) {
-                if (srcArgs[srcArgs.length-1].isArray()) {
-                    Class<?> sourceClass = srcArgs[srcArgs.length-1].getComponentType();
-                    totalCost += getObjectTransformationCost(sourceClass, destClass) + varArgsCost;
-                }
-                else {
-                    totalCost += getObjectTransformationCost(srcArgs[srcArgs.length-1], destClass) + varArgsCost;
-                }
-            }
-            else {
-              // No source arguments were provided for the vararg parameter.
-              // This means we want the most generic matching type, not the most specific.
-              totalCost += getObjectTransformationCost(destClass, Object.class) + varArgsCost;
-            }
-        }
         return totalCost;
     }
 

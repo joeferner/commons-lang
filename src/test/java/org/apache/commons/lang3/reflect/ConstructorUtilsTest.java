@@ -90,14 +90,6 @@ public class ConstructorUtilsTest {
             }
         }
 
-        public TestBean(final String... s) {
-            toString = "(String...)";
-        }
-
-        public TestBean(final Integer i, String... s) {
-            toString = "(Integer, String...)";
-        }
-
         @Override
         public String toString() {
             return toString;
