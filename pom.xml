@@ -29,6 +29,7 @@
   <artifactId>commons-lang3</artifactId>
   <version>3.5-SNAPSHOT</version>
   <name>Apache Commons Lang</name>
+  <name>Commons Lang</name>
 
   <inceptionYear>2001</inceptionYear>
   <description>

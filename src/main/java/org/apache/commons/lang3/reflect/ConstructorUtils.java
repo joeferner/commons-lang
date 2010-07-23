@@ -18,6 +18,7 @@ package org.apache.commons.lang3.reflect;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -278,6 +279,10 @@ public class ConstructorUtils {
             }
         }
         return result;
+    }
+
+    private static boolean isMatchingMethod(Constructor constructor, Class<?>[] parameterTypes) {
+        return MethodUtils.isMatchingMethod(parameterTypes, constructor.getParameterTypes(), constructor.isVarArgs());
     }
 
     /**

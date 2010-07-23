@@ -23,6 +23,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.*;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -694,6 +696,7 @@ public class MethodUtils {
         }
         // search through all methods
         Method bestMatch = null;
+        boolean bestIsVarArgs = false;
         final Method[] methods = cls.getMethods();
         for (final Method method : methods) {
             // compare name and parameters
@@ -782,6 +785,29 @@ public class MethodUtils {
         }
 
         return answer;
+    }
+
+    private static boolean isMatchingMethod(Method method, Class<?>[] parameterTypes, boolean isVarArgs) {
+        return isMatchingMethod(parameterTypes, method.getParameterTypes(), isVarArgs);
+    }
+
+    static boolean isMatchingMethod(Class<?>[] parameterTypes, Class<?>[] methodParameterTypes, boolean isVarArgs) {
+        if (isVarArgs) {
+            int i;
+            for (i = 0; i < methodParameterTypes.length - 1 && i < parameterTypes.length; i++) {
+                if (!ClassUtils.isAssignable(parameterTypes[i], methodParameterTypes[i], true)) {
+                    return false;
+                }
+            }
+            Class<?> varArgParameterType = methodParameterTypes[methodParameterTypes.length - 1].getComponentType();
+            for (; i < parameterTypes.length; i++) {
+                if (!ClassUtils.isAssignable(parameterTypes[i], varArgParameterType, true)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return ClassUtils.isAssignable(parameterTypes, methodParameterTypes, true);
     }
 
     /**
