@@ -1,0 +1,15 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/java:11",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "streetsidesoftware.code-spell-checker"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "installMaven": "true"
+    }
+  }
+}
