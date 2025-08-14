@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.ClassUtils.Interfaces;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
@@ -334,17 +335,24 @@ public class MethodUtils {
             MemberUtils.setAccessibleWorkaround(bestMatch);
         }
         if (bestMatch != null && bestMatch.isVarArgs() && bestMatch.getParameterTypes().length > 0 && parameterTypes.length > 0) {
-            final Class<?>[] methodParameterTypes = bestMatch.getParameterTypes();
-            final Class<?> methodParameterComponentType = methodParameterTypes[methodParameterTypes.length - 1].getComponentType();
-            final String methodParameterComponentTypeName = ClassUtils.primitiveToWrapper(methodParameterComponentType).getName();
-            final Class<?> lastParameterType = parameterTypes[parameterTypes.length - 1];
-            final String parameterTypeName = lastParameterType == null ? null : lastParameterType.getName();
-            final String parameterTypeSuperClassName = lastParameterType == null ? null
-                    : lastParameterType.getSuperclass() != null ? lastParameterType.getSuperclass().getName() : null;
-            if (parameterTypeName != null && parameterTypeSuperClassName != null && !methodParameterComponentTypeName.equals(parameterTypeName)
-                    && !methodParameterComponentTypeName.equals(parameterTypeSuperClassName)) {
-                return null;
-            }
+            final Class<?>[] bestMatchParameterTypes = bestMatch.getParameterTypes();
+            final Class<?> varArgType = bestMatchParameterTypes[bestMatchParameterTypes.length - 1].getComponentType();
+            // if (varArgType != Object.class) {
+                // final String varArgTypeName = ClassUtils.primitiveToWrapper(varArgType).getName();
+                for (int paramIdx = bestMatchParameterTypes.length - 1; paramIdx < parameterTypes.length; paramIdx++) {
+                    final Class<?> parameterType = parameterTypes[paramIdx];
+                    if (!ClassUtils.isAssignable(parameterType, varArgType, true)) {
+                        return null;
+                    }
+                    // final String parameterTypeName = parameterType == null ? null : parameterType.getName();
+                    // final String parameterTypeSuperClassName = parameterType == null ? null
+                    //         : parameterType.getSuperclass() != null ? parameterType.getSuperclass().getName() : null;
+                    // if (parameterTypeName != null && parameterTypeSuperClassName != null && !varArgTypeName.equals(parameterTypeName)
+                    //         && !varArgTypeName.equals(parameterTypeSuperClassName)) {
+                    //     return null;
+                    // }
+                }
+            // }
         }
         return bestMatch;
     }
@@ -566,10 +574,14 @@ public class MethodUtils {
         final Object[] newArgs = ArrayUtils.arraycopy(args, 0, 0, mptLength - 1, () -> new Object[mptLength]);
         // Construct a new array for the variadic parameters
         final Class<?> varArgComponentType = methodParameterTypes[mptLength - 1].getComponentType();
+        final Class<?> varArgComponentWrappedType = ClassUtils.primitiveToWrapper(varArgComponentType);
         final int varArgLength = args.length - mptLength + 1;
-        // Copy the variadic arguments into the varargs array.
-        Object varArgsArray = ArrayUtils.arraycopy(args, mptLength - 1, 0, varArgLength,
-                s -> Array.newInstance(ClassUtils.primitiveToWrapper(varArgComponentType), varArgLength));
+        // Copy the variadic arguments into the varargs array, converting types if needed.
+        Object varArgsArray = Array.newInstance(varArgComponentWrappedType, varArgLength);
+        for (int i = 0; i < varArgLength; i++) {
+            final Object arg = args[mptLength - 1 + i];
+            Array.set(varArgsArray, i, convertVarArg(arg, varArgComponentWrappedType));
+        }
         if (varArgComponentType.isPrimitive()) {
             // unbox from wrapper type to primitive type
             varArgsArray = ArrayUtils.toPrimitive(varArgsArray);
@@ -578,6 +590,15 @@ public class MethodUtils {
         newArgs[mptLength - 1] = varArgsArray;
         // Return the canonical varargs array.
         return newArgs;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object convertVarArg(final Object arg, final Class<?> varArgComponentWrappedType) {
+        if (arg instanceof Number && Number.class.isAssignableFrom(varArgComponentWrappedType) && varArgComponentWrappedType != Number.class) {
+            return NumberUtils.convertIfNotNarrowing((Number) arg, (Class<Number>) varArgComponentWrappedType);
+        } else {
+            return varArgComponentWrappedType.cast(arg);
+        }
     }
 
     /**
